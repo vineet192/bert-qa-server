@@ -2,3 +2,5 @@ bert-server-env/*
 bert-server-env
 mymodel
 mymodel/*
+__pycache__
+__pycache__/*
