@@ -1,11 +1,10 @@
 import json
-
+import nltk
 import numpy as np
 import tensorflow as tf
-from flask import Flask, jsonify, request, Response
-from tokenizers import BertWordPieceTokenizer
-import nltk
+from flask import Flask, Response, jsonify, request
 from nltk.tokenize import sent_tokenize
+from tokenizers import BertWordPieceTokenizer
 
 app = Flask(__name__)
 
@@ -20,11 +19,14 @@ model = tf.keras.models.load_model('./mymodel')
 def hello_world():
     return 'Hello, World!'
 
-@app.get('/get-answer')
+@app.get('/ask-question')
 def get_answer():
     req = request.get_json()
     question = req['question']
     context = req['context']
+
+    # TODO: Write the question onto the firebase database.
+    # TODO: Create a seperate endpoint (POST) to get the answer(basically call predict_answer there).
 
     answer = predict_answer(question, context)
     if answer == None:
