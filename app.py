@@ -1,4 +1,6 @@
 import json
+import os
+
 import nltk
 import numpy as np
 import tensorflow as tf
@@ -7,12 +9,13 @@ from nltk.tokenize import sent_tokenize
 from tokenizers import BertWordPieceTokenizer
 
 app = Flask(__name__)
-
 nltk.download('punkt')
+VOCAB_FILE = os.environ.get('PATH_TO_VOCAB_FILE', './mymodel/assets/vocab.txt')
+MODEL_PATH = os.environ.get('PATH_TO_MODEL', './mymodel')
 tokenizer = BertWordPieceTokenizer(
-    vocab='./mymodel/assets/vocab.txt', lowercase=True)
+    vocab=VOCAB_FILE, lowercase=True)
 max_seq_length = 512
-model = tf.keras.models.load_model('./mymodel')
+model = tf.keras.models.load_model(MODEL_PATH)
 
 
 @app.route('/')
