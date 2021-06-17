@@ -87,6 +87,8 @@ def predict_answer(raw_question, raw_context):
         
         
 def sentences_to_chunks(sentences,chunk_length):
+    #Converts a list of sentences into chunks(paragraphs) of a certain chunk length.
+
     tokenized_sentences = list(map(tokenizer.encode, sentences))
     size = 0
     raw_chunk = ''
@@ -137,7 +139,7 @@ def sentences_to_chunks(sentences,chunk_length):
     return chunk_lookup['chunks'], chunk_lookup['chunk_offsets'], chunk_lookup['raw_sent']
 
 def create_input_targets(tokenized_question, tokenized_context_chunks):
-    #Takes in a raw question and tokenized context and returns the input target for the BERT model to predict upon.
+    #Takes in a tokenized question and tokenized context chunks and returns the input target for the BERT model to predict upon.
 
     # Setting up input_word_ids, input_type_ids, input_mask.
     x = dict(
