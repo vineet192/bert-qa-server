@@ -17,7 +17,6 @@ tokenizer = BertWordPieceTokenizer(
 max_seq_length = 512
 model = tf.keras.models.load_model(MODEL_PATH)
 
-
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
@@ -28,14 +27,20 @@ def get_answer():
     question = req['question']
     context = req['context']
 
-    answer = predict_answer(question, context)
-    if answer == None:
-        answer = 'Sorry the answer could not be found'
+    answers = predict_answer(question, context)
+    if not answers:
+        return jsonify(
+            success=False,
+            msg='Sorry the answer could not be found'
+        )
 
     # TODO: Write the answer onto the firebase database.
 
-    return jsonify(answer=answer)
+    answers = [ans['answer'] for ans in answers]
 
+    return jsonify(
+        success=True,
+        answers=answers)
 
 
 
@@ -47,12 +52,11 @@ def preprocess_context(raw_context, tokenized_question_length):
     chunk_length = max_seq_length - tokenized_question_length - 2
     tokens_length = len(tokenized_context)
     if len(tokenized_context.ids) <= chunk_length:
-        return [tokenized_context.ids], [tokenized_context.offsets]
+        return [tokenized_context.ids], [tokenized_context.offsets], [raw_context]
 
     raw_context_sentences = sent_tokenize(raw_context)
 
     return sentences_to_chunks(raw_context_sentences, chunk_length)
-
 
 def predict_answer(raw_question, raw_context):
     #Takes in a raw question and raw context and returns an answer in raw string format.
@@ -60,33 +64,30 @@ def predict_answer(raw_question, raw_context):
     tokenized_question = tokenizer.encode(raw_question)
     tokenized_context_chunks, context_offset_chunks, raw_sentence_chunks = preprocess_context(raw_context, len(tokenized_question))
     x = create_input_targets(tokenized_question, tokenized_context_chunks)
-
     pred_start, pred_end = model.predict(x).values()
-    final_answer = None
-    confidence = -1
+    answers = []
 
-    for chunk_idx, (context_offset_chunk, raw_sentence_chunk) in enumerate(zip(context_offset_chunks, raw_sentence_chunks)):
-        for idx, (start, end) in enumerate(zip(pred_start, pred_end)):
-            offsets = context_offset_chunk
-            chunk_confidence = max(start) + max(end)
-            start = np.argmax(start)
-            end = np.argmax(end)
-            pred_ans = None
+    for idx, (start, end, context_offset_chunk, raw_sentence_chunk) in enumerate(zip(pred_start, pred_end, context_offset_chunks, raw_sentence_chunks)):
+        offsets = context_offset_chunk
+        start_confidence = max(start) 
+        end_confidence =  max(end)
+        start = np.argmax(start)
+        end = np.argmax(end)
+        pred_ans = None
 
-            if start >= len(offsets):
-                continue
-            if start == 0 and end == 0:
-                continue
-            pred_char_start = offsets[start][0]
-            if end < len(offsets):
-                pred_ans = raw_sentence_chunk[pred_char_start:offsets[end][1]]
-            else:
-                pred_ans = raw_sentence_chunk[pred_char_start:]
-            if chunk_confidence > confidence:
-                    confidence = chunk_confidence
-                    final_answer = pred_ans
+        if start >= len(offsets):
+            continue
+        if start == 0 and end == 0:
+            continue
+        pred_char_start = offsets[start][0]
+        if end < len(offsets):
+            pred_ans = raw_sentence_chunk[pred_char_start:offsets[end][1]]
+        else:
+            pred_ans = raw_sentence_chunk[pred_char_start:]
+        if pred_ans:
+            answers.append(dict(answer = pred_ans, confidence = start_confidence + end_confidence))
                 
-    return final_answer
+    return list(sorted(answers, key = lambda ans: ans['confidence'], reverse = True))
         
         
 def sentences_to_chunks(sentences,chunk_length):
