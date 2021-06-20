@@ -28,12 +28,12 @@ def get_answer():
     question = req['question']
     context = req['context']
 
-    # TODO: Write the question onto the firebase database.
-    # TODO: Create a seperate endpoint (POST) to get the answer(basically call predict_answer there).
-
     answer = predict_answer(question, context)
     if answer == None:
         answer = 'Sorry the answer could not be found'
+
+    # TODO: Write the answer onto the firebase database.
+
     return jsonify(answer=answer)
 
 
