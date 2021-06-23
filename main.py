@@ -10,8 +10,8 @@ from tokenizers import BertWordPieceTokenizer
 
 app = Flask(__name__)
 nltk.download('punkt')
-VOCAB_FILE = os.environ.get('PATH_TO_VOCAB_FILE', './mymodel/assets/vocab.txt')
-MODEL_PATH = os.environ.get('PATH_TO_MODEL', './mymodel')
+VOCAB_FILE = os.environ.get('PATH_TO_VOCAB_FILE', '/app/mymodel/assets/vocab.txt')
+MODEL_PATH = os.environ.get('PATH_TO_MODEL', '/app/mymodel')
 tokenizer = BertWordPieceTokenizer(
     vocab=VOCAB_FILE, lowercase=True)
 max_seq_length = 512
