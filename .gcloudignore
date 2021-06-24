@@ -1,0 +1,4 @@
+bert-server-env/
+.gcloudignore
+.git
+.gitignore
