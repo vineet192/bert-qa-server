@@ -8,7 +8,6 @@ ENV PYTHONUNBUFFERED True
 # Copy local code to the container image.
 ENV APP_HOME /app
 WORKDIR $APP_HOME
-ADD 'mymodel' /
 COPY . .
 
 # Install dependencies
