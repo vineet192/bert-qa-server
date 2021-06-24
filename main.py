@@ -21,7 +21,7 @@ model = tf.keras.models.load_model(MODEL_PATH)
 def hello_world():
     return 'Hello, World!'
 
-@app.get('/ask-question')
+@app.post('/ask-question')
 def get_answer():
     req = request.get_json()
     question = req['question']
