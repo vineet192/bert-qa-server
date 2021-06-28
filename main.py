@@ -4,14 +4,14 @@ import os
 import nltk
 import numpy as np
 import tensorflow as tf
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, request, abort
 from nltk.tokenize import sent_tokenize
 from tokenizers import BertWordPieceTokenizer
 
 app = Flask(__name__)
 nltk.download('punkt')
-VOCAB_FILE = os.environ.get('PATH_TO_VOCAB_FILE', '/app/mymodel/assets/vocab.txt')
-MODEL_PATH = os.environ.get('PATH_TO_MODEL', '/app/mymodel')
+VOCAB_FILE = os.environ.get('PATH_TO_VOCAB_FILE', 'mymodel/assets/vocab.txt')
+MODEL_PATH = os.environ.get('PATH_TO_MODEL', 'mymodel')
 tokenizer = BertWordPieceTokenizer(
     vocab=VOCAB_FILE, lowercase=True)
 max_seq_length = 512
@@ -24,8 +24,11 @@ def hello_world():
 @app.post('/ask-question')
 def get_answer():
     req = request.get_json()
-    question = req['question']
-    context = req['context']
+    try:
+        question = req['question']
+        context = req['context']
+    except KeyError as e:
+        abort(400, 'Malformed request')
 
     answers = predict_answer(question, context)
     if not answers:
@@ -33,8 +36,6 @@ def get_answer():
             success=False,
             msg='Sorry the answer could not be found'
         )
-
-    # TODO: Write the answer onto the firebase database.
 
     answers = [ans['answer'] for ans in answers]
 
@@ -64,7 +65,12 @@ def predict_answer(raw_question, raw_context):
     tokenized_question = tokenizer.encode(raw_question)
     tokenized_context_chunks, context_offset_chunks, raw_sentence_chunks = preprocess_context(raw_context, len(tokenized_question))
     x = create_input_targets(tokenized_question, tokenized_context_chunks)
-    pred_start, pred_end = model.predict(x).values()
+    try:
+        pred_start, pred_end = model.predict(x).values()
+    except ValueError as e:
+        abort(400, {
+            'success': False,
+            'msg' : 'Please check your context'})
     answers = []
 
     for idx, (start, end, context_offset_chunk, raw_sentence_chunk) in enumerate(zip(pred_start, pred_end, context_offset_chunks, raw_sentence_chunks)):
@@ -168,6 +174,10 @@ def create_input_targets(tokenized_question, tokenized_context_chunks):
         x['input_mask'].append(input_mask)
 
     x = {k: np.array(v) for k, v in x.items()}
+    for k,v in x.items():
+        print('\n', k, len(v))
+        for item in v:
+            print('\t', len(item))
 
     return x
 
