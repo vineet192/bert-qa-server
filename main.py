@@ -174,10 +174,6 @@ def create_input_targets(tokenized_question, tokenized_context_chunks):
         x['input_mask'].append(input_mask)
 
     x = {k: np.array(v) for k, v in x.items()}
-    for k,v in x.items():
-        print('\n', k, len(v))
-        for item in v:
-            print('\t', len(item))
 
     return x
 
